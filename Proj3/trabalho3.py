@@ -4,12 +4,9 @@ import matplotlib.pyplot as plt
 import cv2 as cv
 import subprocess
 
-#print("this might take up to 40 seconds!")
-
-#lendo imagem original
+#lendo imagem original, executando NOT e preparando copias
 img = cv.imread('bitmap.pbm',0)
 img = cv.bitwise_not(img)
-#height, width = img.shape
 imgAfter = np.copy(img)
 imgAfter2 = np.copy(img)
 imgAfter3 = np.copy(img)
@@ -50,8 +47,5 @@ subprocess.call(['./comp_conexos','./imgAfter6.pbm', './imgAfter7.pbm'])
 
 #item 8
 
-
-#saida
-print("Done! Open filtered2 folder to check the results!")
-
-#problemas em usar o resultado de uma para a outra. Discussao essencial la pras 10h do dia 19
+#saida para deixar claro que acabou
+print("Done! Open the folder to check the results!")
