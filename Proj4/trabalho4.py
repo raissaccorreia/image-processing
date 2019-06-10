@@ -95,22 +95,87 @@ matches_surf = flann.knnMatch(des_surf_a, des_surf_b, k=2)
 
 #4) Select best matching between each descriptor SIFT
 
-good_points = []
+good_points_sift = []
 ratio = 0.6
 for m, n in matches_sift:
     if m.distance < ratio*n.distance:
-        good_points.append(m)        
-result_4 = cv2.drawMatches(grayA, kp_sift_A, grayB, kp_sift_B, good_points, None)
+        good_points_sift.append(m)        
+result_4 = cv2.drawMatches(grayA, kp_sift_A, grayB, kp_sift_B, good_points_sift, None)
 cv2.imwrite('./SIFT/imgAfter4_Sift.jpg',result_4)
 
 #4) Select best matching between each descriptor SURF
 
-good_points = []
+good_points_surf = []
 ratio = 0.6
 for m, n in matches_surf:
     if m.distance < ratio*n.distance:
-        good_points.append(m)        
-result_4 = cv2.drawMatches(grayA, kp_surf_A, grayB, kp_surf_B, good_points, None)
+        good_points_surf.append(m)        
+result_4 = cv2.drawMatches(grayA, kp_surf_A, grayB, kp_surf_B, good_points_surf, None)
 cv2.imwrite('./SURF/imgAfter4_Surf.jpg',result_4)
 
-#5) 
+#5, 6 and 7) SIFT
+
+MIN_MATCH_COUNT = 10
+if len(good_points_sift)>MIN_MATCH_COUNT:
+    src_pts = np.float32([ kp_sift_A[m.queryIdx].pt for m in good_points_sift ]).reshape(-1,1,2)
+    dst_pts = np.float32([ kp_sift_B[m.trainIdx].pt for m in good_points_sift ]).reshape(-1,1,2)
+
+    M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC,5.0)
+    matchesMask = mask.ravel().tolist()
+
+    h,w = grayA.shape
+    pts = np.float32([ [0,0],[0,h-1],[w-1,h-1],[w-1,0] ]).reshape(-1,1,2)
+    dst = cv2.perspectiveTransform(pts,M)
+
+    grayB = cv2.polylines(grayB,[np.int32(dst)],True,255,3, cv2.LINE_AA)
+
+else:
+    print ("Not enough matches are found - %d/%d" % (len(good_points_sift),MIN_MATCH_COUNT))
+    matchesMask = None
+
+draw_params = dict(matchColor = (0,255,0), singlePointColor = None, matchesMask = matchesMask, flags = 2)
+imgAfter5_Sift = cv2.drawMatches(grayA,kp_sift_A,grayB,kp_sift_B,good_points_sift,None,**draw_params)
+cv2.imwrite('./SIFT/imgAfter5_Sift.jpg',imgAfter5_Sift)
+
+imgAfter6A_Sift = cv2.warpPerspective(img1,M,(w,h))
+imgAfter6B_Sift = cv2.warpPerspective(img2,M,(w,h))
+cv2.imwrite('./SIFT/imgAfter6A_Sift.jpg',imgAfter6A_Sift)
+cv2.imwrite('./SIFT/imgAfter6B_Sift.jpg',imgAfter6B_Sift)
+
+final_img = cv2.warpPerspective(img1,M,(w + w, h))
+final_img[0:h, 0:w] = img2
+cv2.imwrite('./SIFT/imgFinal_Sift.jpg',final_img)
+
+
+#5, 6 and 7) SURF
+
+if len(good_points_surf)>MIN_MATCH_COUNT:
+    src_pts = np.float32([ kp_surf_A[m.queryIdx].pt for m in good_points_surf ]).reshape(-1,1,2)
+    dst_pts = np.float32([ kp_surf_B[m.trainIdx].pt for m in good_points_surf ]).reshape(-1,1,2)
+
+    M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC,5.0)
+    matchesMask = mask.ravel().tolist()
+
+    h,w = grayA.shape
+    pts = np.float32([ [0,0],[0,h-1],[w-1,h-1],[w-1,0] ]).reshape(-1,1,2)
+    dst = cv2.perspectiveTransform(pts,M)
+
+    grayB = cv2.polylines(grayB,[np.int32(dst)],True,255,3, cv2.LINE_AA)
+    
+else:
+    print ("Not enough matches are found - %d/%d" % (len(good_points_surf),MIN_MATCH_COUNT))
+    matchesMask = None
+
+draw_params = dict(matchColor = (0,255,0), singlePointColor = None, matchesMask = matchesMask, flags = 2)
+imgAfter5_Surf = cv2.drawMatches(grayA,kp_surf_A,grayB,kp_surf_B,good_points_surf,None,**draw_params)
+cv2.imwrite('./SURF/imgAfter5_Surf.jpg',imgAfter5_Surf)
+
+imgAfter6A_Surf = cv2.warpPerspective(img1,M,(w,h))
+imgAfter6B_Surf = cv2.warpPerspective(img2,M,(w,h))
+cv2.imwrite('./SURF/imgAfter6A_Surf.jpg',imgAfter6A_Surf)
+cv2.imwrite('./SURF/imgAfter6B_Surf.jpg',imgAfter6B_Surf)
+
+final_img = cv2.warpPerspective(img1,M,(w + w, h))
+final_img[0:h, 0:w] = img2
+cv2.imwrite('./SURF/imgFinal_Surf.jpg',final_img)
+
